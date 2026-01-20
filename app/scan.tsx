@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Button, StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { Alert, Button, StyleSheet, Text, View, ActivityIndicator, Platform } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 
 export default function ScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<"back" | "front">("back");
   const [scanned, setScanned] = useState(false);
   const [barcode, setBarcode] = useState<{ data: string; type: string } | null>(null);
   const lastScanAtRef = useRef(0);
+  const [mirror, setMirror] = useState(Platform.OS === "web"); 
+
 
   useEffect(() => {
     if (!permission) return;
@@ -25,9 +28,7 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Text style={{ marginBottom: 12 }}>
-          Camera permission is needed to scan barcodes.
-        </Text>
+        <Text style={{ marginBottom: 12 }}>Camera permission is needed.</Text>
         <Button title="Allow camera" onPress={requestPermission} />
       </View>
     );
@@ -41,7 +42,6 @@ export default function ScanScreen() {
     if (scanned) return;
     setScanned(true);
     setBarcode({ data, type });
-
     Alert.alert("Scanned!", `Type: ${type}\nCode: ${data}`);
   };
 
@@ -51,13 +51,16 @@ export default function ScanScreen() {
 
       <View style={styles.cameraWrap}>
         <CameraView
-          style={StyleSheet.absoluteFill}
-          facing="back"
-          barcodeScannerSettings={{
-            barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39"],
-          }}
-          onBarcodeScanned={scanned ? undefined : onBarcodeScanned}
-        />
+            style={[
+                StyleSheet.absoluteFill,
+                mirror ? { transform: [{ scaleX: -1 }] } : null
+            ]}
+            facing="back"
+            barcodeScannerSettings={{
+                barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39"],
+            }}
+            onBarcodeScanned={scanned ? undefined : onBarcodeScanned}
+            />
       </View>
 
       <View style={styles.panel}>
@@ -65,13 +68,24 @@ export default function ScanScreen() {
         <Text>{barcode ? `${barcode.data} (${barcode.type})` : "No scan yet"}</Text>
 
         <View style={{ height: 12 }} />
-        <Button
-          title={scanned ? "Scan again" : "Ready to scan"}
-          onPress={() => {
-            setScanned(false);
-            setBarcode(null);
-          }}
-        />
+
+        <View style={{ gap: 10 }}>
+          <Button
+            title={scanned ? "Scan again" : "Ready to scan"}
+            onPress={() => {
+              setScanned(false);
+              setBarcode(null);
+            }}
+          />
+        </View>
+
+        {Platform.OS === "web" && (
+            <Button
+                title={mirror ? "Un-mirror camera" : "Mirror camera"}
+                onPress={() => setMirror((m) => !m)}
+            />
+        )}
+
       </View>
     </View>
   );
