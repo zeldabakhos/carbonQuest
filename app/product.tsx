@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   Pressable,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { lookupProduct, Product } from "./utils/productApi";
@@ -19,14 +20,34 @@ export default function ProductScreen() {
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ NEW: manual entry fallback
+  const [manualCode, setManualCode] = useState("");
+
+  const goToBarcode = (code: string) => {
+    const cleaned = (code || "").replace(/\D/g, "");
+    if (cleaned.length < 8 || cleaned.length > 14) {
+      setError("Please enter a valid barcode (8–14 digits).");
+      return;
+    }
+
+    router.replace({
+      pathname: "/product",
+      params: { barcode: cleaned },
+    });
+  };
+
   useEffect(() => {
+    setLoading(true);
+    setProduct(null);
+    setError(null);
+
     if (!barcode) {
       setError("No barcode provided");
       setLoading(false);
       return;
     }
 
-    lookupProduct(barcode).then((result) => {
+    lookupProduct(String(barcode)).then((result) => {
       if (result.success && result.product) {
         setProduct(result.product);
       } else {
@@ -45,16 +66,45 @@ export default function ProductScreen() {
     );
   }
 
+  // ✅ UPDATED: error screen now includes manual barcode search
   if (error || !product) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorIcon}>😕</Text>
         <Text style={styles.errorTitle}>Product Not Found</Text>
         <Text style={styles.errorText}>{error}</Text>
-        <Text style={styles.barcodeText}>Barcode: {barcode}</Text>
-        <Pressable style={styles.button} onPress={() => router.back()}>
-          <Text style={styles.buttonText}>Scan Another</Text>
-        </Pressable>
+
+        <Text style={styles.barcodeText}>
+          Barcode: {barcode ? String(barcode) : "—"}
+        </Text>
+
+        <View style={{ width: "100%", marginTop: 12 }}>
+          <Text style={styles.manualLabel}>Enter barcode manually</Text>
+          <TextInput
+            value={manualCode}
+            onChangeText={setManualCode}
+            placeholder="e.g. 5449000000996"
+            keyboardType="numeric"
+            inputMode="numeric"
+            autoCorrect={false}
+            style={styles.input}
+          />
+
+          <Pressable
+            style={[styles.button, !manualCode.trim() && styles.buttonDisabled]}
+            onPress={() => goToBarcode(manualCode)}
+            disabled={!manualCode.trim()}
+          >
+            <Text style={styles.buttonText}>Search</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.buttonTextSecondary}>Go back to Scan</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -77,9 +127,7 @@ export default function ProductScreen() {
         <Text style={styles.brand}>{product.brand}</Text>
         <Text style={styles.name}>{product.name}</Text>
 
-        {product.quantity && (
-          <Text style={styles.quantity}>{product.quantity}</Text>
-        )}
+        {product.quantity && <Text style={styles.quantity}>{product.quantity}</Text>}
 
         {/* Source Badge */}
         <View style={styles.sourceBadge}>
@@ -118,8 +166,7 @@ export default function ProductScreen() {
           <Text style={styles.carbonTitle}>🌍 Carbon Footprint</Text>
           <Text style={styles.carbonValue}>Coming Soon</Text>
           <Text style={styles.carbonSubtext}>
-            We're working on calculating the environmental impact of this
-            product.
+            We're working on calculating the environmental impact of this product.
           </Text>
         </View>
 
@@ -145,10 +192,7 @@ export default function ProductScreen() {
         </View>
 
         {/* Scan Another Button */}
-        <Pressable
-          style={styles.button}
-          onPress={() => router.back()}
-        >
+        <Pressable style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>Scan Another Product</Text>
         </Pressable>
       </View>
@@ -198,7 +242,7 @@ function nutriscoreColor(grade: string): string {
 }
 
 function ecoscoreColor(grade: string): string {
-  return nutriscoreColor(grade); // Same color scheme
+  return nutriscoreColor(grade);
 }
 
 function novaColor(group: number): string {
@@ -212,188 +256,58 @@ function novaColor(group: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: "#fff" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#fff" },
+  loadingText: { marginTop: 12, fontSize: 16, color: "#666" },
+  errorIcon: { fontSize: 64, marginBottom: 16 },
+  errorTitle: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
+  errorText: { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 8 },
+  barcodeText: { fontSize: 14, color: "#999", marginBottom: 8 },
+
+  // ✅ NEW styles for manual entry
+  manualLabel: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6 },
+  input: {
     backgroundColor: "#fff",
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-    backgroundColor: "#fff",
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#666",
-  },
-  errorIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  barcodeText: {
-    fontSize: 14,
-    color: "#999",
-    marginBottom: 24,
-  },
-  header: {
-    alignItems: "center",
-    paddingVertical: 24,
-    backgroundColor: "#f9fafb",
-  },
-  image: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: "#eee",
-  },
-  imagePlaceholder: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: "#e5e7eb",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  placeholderText: {
-    color: "#9ca3af",
-    fontSize: 16,
-  },
-  content: {
-    padding: 20,
-  },
-  brand: {
-    fontSize: 14,
-    color: "#6b7280",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  quantity: {
-    fontSize: 16,
-    color: "#6b7280",
-    marginBottom: 12,
-  },
-  sourceBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-  sourceText: {
-    fontSize: 14,
-    color: "#374151",
-  },
-  scoresRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
-  },
-  scoreBadge: {
-    alignItems: "center",
-  },
-  scoreLabel: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-  scoreValue: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scoreValueText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  carbonCard: {
-    backgroundColor: "#ecfdf5",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#a7f3d0",
-  },
-  carbonTitle: {
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 16,
-    fontWeight: "600",
-    color: "#065f46",
-    marginBottom: 4,
-  },
-  carbonValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#047857",
-    marginBottom: 4,
-  },
-  carbonSubtext: {
-    fontSize: 14,
-    color: "#047857",
-  },
-  infoSection: {
-    marginBottom: 16,
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
-  },
-  infoContent: {
-    fontSize: 15,
-    color: "#6b7280",
-    lineHeight: 22,
-  },
-  barcodeSection: {
-    alignItems: "center",
-    paddingVertical: 16,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-  },
-  barcodeLabel: {
-    fontSize: 12,
-    color: "#9ca3af",
-  },
-  barcodeValue: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
     fontFamily: "monospace",
   },
-  button: {
-    backgroundColor: "#22c55e",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 16,
-    marginBottom: 40,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+
+  header: { alignItems: "center", paddingVertical: 24, backgroundColor: "#f9fafb" },
+  image: { width: 200, height: 200, borderRadius: 12, backgroundColor: "#eee" },
+  imagePlaceholder: { width: 200, height: 200, borderRadius: 12, backgroundColor: "#e5e7eb", alignItems: "center", justifyContent: "center" },
+  placeholderText: { color: "#9ca3af", fontSize: 16 },
+  content: { padding: 20 },
+  brand: { fontSize: 14, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1 },
+  name: { fontSize: 24, fontWeight: "700", marginTop: 4, marginBottom: 4 },
+  quantity: { fontSize: 16, color: "#6b7280", marginBottom: 12 },
+  sourceBadge: { alignSelf: "flex-start", backgroundColor: "#f3f4f6", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginBottom: 20 },
+  sourceText: { fontSize: 14, color: "#374151" },
+  scoresRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
+  scoreBadge: { alignItems: "center" },
+  scoreLabel: { fontSize: 12, color: "#6b7280", marginBottom: 4 },
+  scoreValue: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  scoreValueText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  carbonCard: { backgroundColor: "#ecfdf5", padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: "#a7f3d0" },
+  carbonTitle: { fontSize: 16, fontWeight: "600", color: "#065f46", marginBottom: 4 },
+  carbonValue: { fontSize: 24, fontWeight: "700", color: "#047857", marginBottom: 4 },
+  carbonSubtext: { fontSize: 14, color: "#047857" },
+  infoSection: { marginBottom: 16 },
+  infoTitle: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 4 },
+  infoContent: { fontSize: 15, color: "#6b7280", lineHeight: 22 },
+  barcodeSection: { alignItems: "center", paddingVertical: 16, marginTop: 8, borderTopWidth: 1, borderTopColor: "#e5e7eb" },
+  barcodeLabel: { fontSize: 12, color: "#9ca3af" },
+  barcodeValue: { fontSize: 16, fontWeight: "500", color: "#374151", fontFamily: "monospace" },
+
+  button: { backgroundColor: "#22c55e", paddingVertical: 16, borderRadius: 12, alignItems: "center", marginTop: 16, marginBottom: 12 },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+
+  // ✅ NEW styles for disabled + secondary button
+  buttonDisabled: { backgroundColor: "#9ca3af" },
+  buttonSecondary: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#d1d5db" },
+  buttonTextSecondary: { color: "#374151", fontSize: 16, fontWeight: "600" },
 });

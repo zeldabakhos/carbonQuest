@@ -120,6 +120,19 @@ export default function ScanScreen() {
           </Text>
         </Pressable>
 
+        <Pressable
+            style={[styles.button, styles.buttonSecondary]}
+            onPress={() =>
+                router.push({
+                pathname: "/product",
+                params: { barcode: "" }, // triggers manual entry mode
+                })
+            }
+            >
+            <Text style={styles.buttonTextSecondary}>Manual search (enter barcode)</Text>
+        </Pressable>
+
+
         {Platform.OS === "web" && (
           <Pressable
             style={[styles.button, styles.buttonSecondary]}
