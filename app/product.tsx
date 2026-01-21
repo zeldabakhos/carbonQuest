@@ -11,6 +11,13 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { lookupProduct, Product } from "./utils/productApi";
+import {
+  calculateCarbonFootprint,
+  formatCarbonValue,
+  formatCarbonPerKg,
+  getCarbonRating,
+  getComparisonText,
+} from "./utils/carbonFootprint";
 
 export default function ProductScreen() {
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
@@ -109,6 +116,11 @@ export default function ProductScreen() {
     );
   }
 
+  // Calculate carbon footprint
+  const carbonEstimate = calculateCarbonFootprint(product);
+  const isBeautyProduct = product.source === "openbeautyfacts";
+  const carbonRating = getCarbonRating(carbonEstimate, isBeautyProduct);
+
   return (
     <ScrollView style={styles.container}>
       {/* Header with image */}
@@ -127,7 +139,9 @@ export default function ProductScreen() {
         <Text style={styles.brand}>{product.brand}</Text>
         <Text style={styles.name}>{product.name}</Text>
 
-        {product.quantity && <Text style={styles.quantity}>{product.quantity}</Text>}
+        {product.quantity && (
+          <Text style={styles.quantity}>{product.quantity}</Text>
+        )}
 
         {/* Source Badge */}
         <View style={styles.sourceBadge}>
@@ -161,13 +175,51 @@ export default function ProductScreen() {
           )}
         </View>
 
-        {/* Carbon Footprint Placeholder */}
+        {/* Carbon Footprint Section */}
         <View style={styles.carbonCard}>
           <Text style={styles.carbonTitle}>🌍 Carbon Footprint</Text>
-          <Text style={styles.carbonValue}>Coming Soon</Text>
-          <Text style={styles.carbonSubtext}>
-            We're working on calculating the environmental impact of this product.
+          <View style={styles.carbonRow}>
+            <View
+              style={[
+                styles.carbonBadge,
+                { backgroundColor: carbonRating.color },
+              ]}
+            >
+              <Text style={styles.carbonBadgeText}>{carbonRating.rating}</Text>
+            </View>
+            <View style={styles.carbonInfo}>
+              <Text style={styles.carbonValue}>
+                {formatCarbonValue(carbonEstimate)}
+              </Text>
+              <Text style={styles.carbonLabel}>{carbonRating.label}</Text>
+            </View>
+          </View>
+          <Text style={styles.carbonPerKg}>
+            {isBeautyProduct 
+              ? `(${(carbonEstimate.productWeight * 1000).toFixed(0)}ml product)`
+              : `(${formatCarbonPerKg(carbonEstimate)} • ${carbonEstimate.productWeight.toFixed(2)} kg product)`
+            }
           </Text>
+          <Text style={styles.carbonComparison}>
+            {getComparisonText(carbonEstimate)}
+          </Text>
+          <Text style={styles.carbonExplanation}>
+            {carbonEstimate.explanation} • {carbonEstimate.confidence} confidence
+          </Text>
+          {carbonEstimate.breakdown && (
+            <View style={styles.carbonBreakdown}>
+              <Text style={styles.breakdownTitle}>Breakdown:</Text>
+              <Text style={styles.breakdownItem}>
+                🌱 Production: {carbonEstimate.breakdown.production.toFixed(3)} kg
+              </Text>
+              <Text style={styles.breakdownItem}>
+                📦 Packaging: {carbonEstimate.breakdown.packaging.toFixed(3)} kg
+              </Text>
+              <Text style={styles.breakdownItem}>
+                🚚 Transport: {carbonEstimate.breakdown.transport.toFixed(3)} kg
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Categories */}
@@ -257,15 +309,31 @@ function novaColor(group: number): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#fff" },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: "#fff",
+  },
   loadingText: { marginTop: 12, fontSize: 16, color: "#666" },
   errorIcon: { fontSize: 64, marginBottom: 16 },
   errorTitle: { fontSize: 24, fontWeight: "700", marginBottom: 8 },
-  errorText: { fontSize: 16, color: "#666", textAlign: "center", marginBottom: 8 },
+  errorText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 8,
+  },
   barcodeText: { fontSize: 14, color: "#999", marginBottom: 8 },
 
-  // ✅ NEW styles for manual entry
-  manualLabel: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6 },
+  // ✅ Styles for manual entry
+  manualLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 6,
+  },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -277,37 +345,174 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
   },
 
-  header: { alignItems: "center", paddingVertical: 24, backgroundColor: "#f9fafb" },
-  image: { width: 200, height: 200, borderRadius: 12, backgroundColor: "#eee" },
-  imagePlaceholder: { width: 200, height: 200, borderRadius: 12, backgroundColor: "#e5e7eb", alignItems: "center", justifyContent: "center" },
+  header: {
+    alignItems: "center",
+    paddingVertical: 24,
+    backgroundColor: "#f9fafb",
+  },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: "#eee",
+  },
+  imagePlaceholder: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: "#e5e7eb",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   placeholderText: { color: "#9ca3af", fontSize: 16 },
   content: { padding: 20 },
-  brand: { fontSize: 14, color: "#6b7280", textTransform: "uppercase", letterSpacing: 1 },
+  brand: {
+    fontSize: 14,
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
   name: { fontSize: 24, fontWeight: "700", marginTop: 4, marginBottom: 4 },
   quantity: { fontSize: 16, color: "#6b7280", marginBottom: 12 },
-  sourceBadge: { alignSelf: "flex-start", backgroundColor: "#f3f4f6", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginBottom: 20 },
+  sourceBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
   sourceText: { fontSize: 14, color: "#374151" },
   scoresRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
   scoreBadge: { alignItems: "center" },
   scoreLabel: { fontSize: 12, color: "#6b7280", marginBottom: 4 },
-  scoreValue: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  scoreValue: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   scoreValueText: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  carbonCard: { backgroundColor: "#ecfdf5", padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: "#a7f3d0" },
-  carbonTitle: { fontSize: 16, fontWeight: "600", color: "#065f46", marginBottom: 4 },
-  carbonValue: { fontSize: 24, fontWeight: "700", color: "#047857", marginBottom: 4 },
-  carbonSubtext: { fontSize: 14, color: "#047857" },
-  infoSection: { marginBottom: 16 },
-  infoTitle: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 4 },
-  infoContent: { fontSize: 15, color: "#6b7280", lineHeight: 22 },
-  barcodeSection: { alignItems: "center", paddingVertical: 16, marginTop: 8, borderTopWidth: 1, borderTopColor: "#e5e7eb" },
-  barcodeLabel: { fontSize: 12, color: "#9ca3af" },
-  barcodeValue: { fontSize: 16, fontWeight: "500", color: "#374151", fontFamily: "monospace" },
 
-  button: { backgroundColor: "#22c55e", paddingVertical: 16, borderRadius: 12, alignItems: "center", marginTop: 16, marginBottom: 12 },
+  // ✅ Carbon footprint styles
+  carbonCard: {
+    backgroundColor: "#ecfdf5",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#a7f3d0",
+  },
+  carbonTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#065f46",
+    marginBottom: 12,
+  },
+  carbonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
+  carbonBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  carbonBadgeText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  carbonInfo: {
+    flex: 1,
+  },
+  carbonValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#047857",
+  },
+  carbonLabel: {
+    fontSize: 14,
+    color: "#065f46",
+  },
+  carbonPerKg: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 4,
+  },
+  carbonComparison: {
+    fontSize: 14,
+    color: "#047857",
+    marginTop: 4,
+  },
+  carbonExplanation: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontStyle: "italic",
+    marginTop: 4,
+  },
+  carbonBreakdown: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#a7f3d0",
+  },
+  breakdownTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#065f46",
+    marginBottom: 4,
+  },
+  breakdownItem: {
+    fontSize: 13,
+    color: "#047857",
+    marginTop: 2,
+  },
+
+  infoSection: { marginBottom: 16 },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 4,
+  },
+  infoContent: { fontSize: 15, color: "#6b7280", lineHeight: 22 },
+  barcodeSection: {
+    alignItems: "center",
+    paddingVertical: 16,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  barcodeLabel: { fontSize: 12, color: "#9ca3af" },
+  barcodeValue: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#374151",
+    fontFamily: "monospace",
+  },
+
+  button: {
+    backgroundColor: "#22c55e",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 12,
+  },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 
-  // ✅ NEW styles for disabled + secondary button
+  // ✅ Disabled + secondary button
   buttonDisabled: { backgroundColor: "#9ca3af" },
-  buttonSecondary: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#d1d5db" },
+  buttonSecondary: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
   buttonTextSecondary: { color: "#374151", fontSize: 16, fontWeight: "600" },
 });
