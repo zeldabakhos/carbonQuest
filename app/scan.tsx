@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
+  Animated,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
@@ -20,6 +21,7 @@ export default function ScanScreen() {
   const [barcode, setBarcode] = useState<{ data: string; type: string } | null>(null);
   const lastScanAtRef = useRef(0);
   const [mirror, setMirror] = useState(Platform.OS === "web");
+  const scanLineAnim = useRef(new Animated.Value(0)).current;
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -27,6 +29,28 @@ export default function ScanScreen() {
       router.replace("/signin");
     }
   }, [isSignedIn]);
+
+  // Animate scan line
+  useEffect(() => {
+    if (!scanned) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scanLineAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scanLineAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      scanLineAnim.setValue(0);
+    }
+  }, [scanned]);
 
   // Still loading permission status
   if (permission === null) {
@@ -67,14 +91,18 @@ export default function ScanScreen() {
     lastScanAtRef.current = now;
 
     if (scanned) return;
+
+    console.log('Barcode scanned:', data, type);
     setScanned(true);
     setBarcode({ data, type });
 
-    // Navigate to product page with the barcode
-    router.push({
-      pathname: "/product",
-      params: { barcode: data },
-    });
+    // Navigate to product page with the barcode after a brief delay
+    setTimeout(() => {
+      router.push({
+        pathname: "/product",
+        params: { barcode: data },
+      });
+    }, 500);
   };
 
   const resetScanner = () => {
@@ -84,9 +112,9 @@ export default function ScanScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>CarbonQuest — Scan</Text>
+      <Text style={styles.title}>Scan Product Barcode</Text>
       <Text style={styles.subtitle}>
-        Point your camera at a product barcode
+        {scanned ? "✓ Barcode detected!" : "📷 Align barcode within the frame"}
       </Text>
 
       <View style={styles.cameraWrap}>
@@ -109,6 +137,32 @@ export default function ScanScreen() {
             <View style={[styles.corner, styles.topRight]} />
             <View style={[styles.corner, styles.bottomLeft]} />
             <View style={[styles.corner, styles.bottomRight]} />
+
+            {/* Animated scan line */}
+            {!scanned && (
+              <Animated.View
+                style={[
+                  styles.scanLine,
+                  {
+                    transform: [
+                      {
+                        translateY: scanLineAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 150],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+            )}
+
+            {/* Success indicator */}
+            {scanned && (
+              <View style={styles.successOverlay}>
+                <Text style={styles.successText}>✓ Scanned!</Text>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -223,6 +277,38 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderRightWidth: 3,
     borderBottomRightRadius: 8,
+  },
+  scanLine: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: "#22c55e",
+    shadowColor: "#22c55e",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  successOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(34, 197, 94, 0.2)",
+    borderRadius: 8,
+  },
+  successText: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#22c55e",
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   panel: {
     marginTop: 16,

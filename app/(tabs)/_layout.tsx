@@ -8,21 +8,12 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#22c55e',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#e5e7eb',
+          display: 'none', // Hide the tab bar
         },
         headerShown: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20 }}>🏠</Text>
-          ),
-        }}
-      />
+  
       <Tabs.Screen
         name="explore"
         options={{

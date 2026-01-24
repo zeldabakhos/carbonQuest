@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -6,18 +6,60 @@ import {
   ScrollView,
   Pressable,
   StatusBar,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+
+const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const router = useRouter();
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Parallax values
+  const headerScale = scrollY.interpolate({
+    inputRange: [-100, 0],
+    outputRange: [1.5, 1],
+    extrapolate: "clamp",
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+
+  const navbarOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [0.95, 1],
+    extrapolate: "clamp",
+  });
+
+  const navbarShadow = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [0, 4],
+    extrapolate: "clamp",
+  });
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Navigation Bar */}
-      <View style={styles.navbar}>
+      {/* Animated Navigation Bar */}
+      <Animated.View
+        style={[
+          styles.navbar,
+          {
+            opacity: navbarOpacity,
+            shadowOpacity: navbarShadow.interpolate({
+              inputRange: [0, 4],
+              outputRange: [0, 0.1],
+            }),
+          },
+        ]}
+      >
         <Text style={styles.logo}>🌱 CarbonQuest</Text>
         <View style={styles.navButtons}>
           <Pressable
@@ -33,25 +75,46 @@ export default function HomeScreen() {
             <Text style={styles.navButtonTextPrimary}>Sign Up</Text>
           </Pressable>
         </View>
-      </View>
+      </Animated.View>
 
-      <ScrollView
+      <Animated.ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
       >
-        {/* Hero Section */}
-        <View style={styles.heroSection}>
-          <Text style={styles.heroEmoji}>🌍</Text>
-          <Text style={styles.heroTitle}>Our Planet Needs You</Text>
-          <Text style={styles.heroSubtitle}>
-            Every product you buy has a carbon footprint. Make informed choices
-            to protect our future.
-          </Text>
-        </View>
+        {/* Hero Section with Parallax */}
+        <Animated.View
+          style={[
+            styles.heroSection,
+            {
+              transform: [{ scale: headerScale }],
+              opacity: headerOpacity,
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={["#ecfdf5", "#d1fae5", "#a7f3d0"]}
+            style={styles.heroGradient}
+          >
+            <Text style={styles.heroEmoji}>🌍</Text>
+            <Text style={styles.heroTitle}>Our Planet Needs You</Text>
+            <Text style={styles.heroSubtitle}>
+              Every product you buy has a carbon footprint. Make informed choices
+              to protect our future.
+            </Text>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Stats Section */}
-        <View style={styles.statsSection}>
+        <LinearGradient
+          colors={["#065f46", "#047857", "#059669"]}
+          style={styles.statsSection}
+        >
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>36B</Text>
             <Text style={styles.statLabel}>Tons of CO₂ emitted yearly</Text>
@@ -64,7 +127,7 @@ export default function HomeScreen() {
             <Text style={styles.statNumber}>70%</Text>
             <Text style={styles.statLabel}>Emissions from consumption</Text>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Info Section */}
         <View style={styles.infoSection}>
@@ -129,10 +192,20 @@ export default function HomeScreen() {
           </Text>
 
           <Pressable
-            style={styles.ctaButton}
+            style={({ pressed }) => [
+              styles.ctaButton,
+              pressed && styles.ctaButtonPressed,
+            ]}
             onPress={() => router.push("/signup")}
           >
-            <Text style={styles.ctaButtonText}>🌱 Help Save the Planet</Text>
+            <LinearGradient
+              colors={["#22c55e", "#16a34a", "#15803d"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.ctaButtonGradient}
+            >
+              <Text style={styles.ctaButtonText}>🌱 Help Save the Planet</Text>
+            </LinearGradient>
           </Pressable>
         </View>
 
@@ -142,7 +215,7 @@ export default function HomeScreen() {
             © 2025 CarbonQuest • Making sustainability simple
           </Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -150,32 +223,43 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f9fafb",
   },
   navbar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(10px)",
+    zIndex: 1000,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 5,
   },
   logo: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 22,
+    fontWeight: "800",
     color: "#22c55e",
+    letterSpacing: -0.5,
   },
   navButtons: {
     flexDirection: "row",
     gap: 10,
   },
   navButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
   navButtonText: {
     fontSize: 15,
@@ -184,6 +268,12 @@ const styles = StyleSheet.create({
   },
   navButtonPrimary: {
     backgroundColor: "#22c55e",
+    borderColor: "#22c55e",
+    shadowColor: "#22c55e",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   navButtonTextPrimary: {
     fontSize: 15,
@@ -195,38 +285,46 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+    paddingTop: 80,
   },
   heroSection: {
+    marginBottom: 0,
+    overflow: "hidden",
+  },
+  heroGradient: {
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 32,
-    backgroundColor: "#ecfdf5",
+    paddingTop: 60,
+    paddingBottom: 50,
   },
   heroEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 80,
+    marginBottom: 20,
+    textShadowColor: "rgba(0, 0, 0, 0.1)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   heroTitle: {
-    fontSize: 32,
-    fontWeight: "800",
+    fontSize: 38,
+    fontWeight: "900",
     color: "#065f46",
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 16,
+    letterSpacing: -1,
   },
   heroSubtitle: {
-    fontSize: 17,
+    fontSize: 18,
     color: "#047857",
     textAlign: "center",
-    lineHeight: 26,
-    maxWidth: 320,
+    lineHeight: 28,
+    maxWidth: 340,
+    fontWeight: "500",
   },
   statsSection: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 24,
+    paddingVertical: 32,
     paddingHorizontal: 16,
-    backgroundColor: "#065f46",
   },
   statCard: {
     alignItems: "center",
@@ -256,10 +354,17 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: "row",
-    backgroundColor: "#f9fafb",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
   },
   infoCardEmoji: {
     fontSize: 32,
@@ -280,11 +385,18 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   impactSection: {
-    padding: 24,
+    padding: 28,
     backgroundColor: "#fef3c7",
-    marginHorizontal: 16,
-    borderRadius: 16,
-    marginBottom: 24,
+    marginHorizontal: 20,
+    borderRadius: 24,
+    marginBottom: 32,
+    shadowColor: "#f59e0b",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#fde68a",
   },
   impactTitle: {
     fontSize: 20,
@@ -320,20 +432,29 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   ctaButton: {
-    backgroundColor: "#22c55e",
-    paddingVertical: 18,
-    paddingHorizontal: 40,
-    borderRadius: 14,
+    borderRadius: 16,
     shadowColor: "#22c55e",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
+    overflow: "hidden",
+  },
+  ctaButtonPressed: {
+    transform: [{ scale: 0.98 }],
+    shadowOpacity: 0.2,
+  },
+  ctaButtonGradient: {
+    paddingVertical: 20,
+    paddingHorizontal: 48,
+    alignItems: "center",
+    justifyContent: "center",
   },
   ctaButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 19,
+    fontWeight: "800",
     color: "#fff",
+    letterSpacing: 0.5,
   },
   footer: {
     padding: 24,
