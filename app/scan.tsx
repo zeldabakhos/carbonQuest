@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Button,
   StyleSheet,
@@ -10,14 +10,23 @@ import {
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
+import { useAuth } from "./context/AuthContext";
 
 export default function ScanScreen() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [barcode, setBarcode] = useState<{ data: string; type: string } | null>(null);
   const lastScanAtRef = useRef(0);
   const [mirror, setMirror] = useState(Platform.OS === "web");
+
+  // Redirect to signin if not authenticated
+  useEffect(() => {
+    if (!isSignedIn) {
+      router.replace("/signin");
+    }
+  }, [isSignedIn]);
 
   // Still loading permission status
   if (permission === null) {

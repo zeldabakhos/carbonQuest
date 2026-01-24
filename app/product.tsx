@@ -18,10 +18,12 @@ import {
   getCarbonRating,
   getComparisonText,
 } from "@/app/utils/carbonFootprint";
+import { useAuth } from "./context/AuthContext";
 
 export default function ProductScreen() {
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
   const router = useRouter();
+  const { isSignedIn } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
@@ -29,6 +31,13 @@ export default function ProductScreen() {
 
   // ✅ NEW: manual entry fallback
   const [manualCode, setManualCode] = useState("");
+
+  // Redirect to signin if not authenticated
+  useEffect(() => {
+    if (!isSignedIn) {
+      router.replace("/signin");
+    }
+  }, [isSignedIn]);
 
   const goToBarcode = (code: string) => {
     const cleaned = (code || "").replace(/\D/g, "");

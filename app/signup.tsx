@@ -10,16 +10,18 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useAuth } from "./context/AuthContext";
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { signUp } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     setError("");
 
     if (!name.trim()) {
@@ -43,9 +45,13 @@ export default function SignUpScreen() {
       return;
     }
 
-    // TODO: Implement actual registration
-    // After successful registration, navigate to signin
-    router.push("/signin");
+    // Sign up using auth context
+    const success = await signUp(name, email, password);
+    if (success) {
+      router.replace("/scan");
+    } else {
+      setError("Failed to create account. Please try again.");
+    }
   };
 
   return (

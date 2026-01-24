@@ -10,14 +10,16 @@ import {
   ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useAuth } from "./context/AuthContext";
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     setError("");
 
     if (!email.trim()) {
@@ -29,9 +31,13 @@ export default function SignInScreen() {
       return;
     }
 
-    // TODO: Implement actual authentication
-    // For now, just navigate to scan page
-    router.replace("/scan");
+    // Sign in using auth context
+    const success = await signIn(email, password);
+    if (success) {
+      router.replace("/scan");
+    } else {
+      setError("Invalid email or password");
+    }
   };
 
   return (
