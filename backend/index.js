@@ -34,6 +34,8 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
+    scanCount: { type: Number, default: 0 },
+    points: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -44,10 +46,12 @@ const User = mongoose.model("User", userSchema);
 const scanSchema = new mongoose.Schema(
   {
     barcode: { type: String, required: true },
-    source: { type: String, enum: ["openfoodfacts", "openbeautyfacts"], required: true },
-    name: { type: String },
-    co2e: { type: Number }, // estimated CO2e
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    source: { type: String },
+    name: { type: String, required: true },
+    brand: { type: String },
+    co2e: { type: Number }, // estimated CO2e in kg
+    carbonRating: { type: String }, // A-F rating
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
 );
@@ -137,17 +141,81 @@ app.post("/auth/signin", async (req, res) => {
   }
 });
 
-// Create a scan (POST /scans)
+// Create a scan for a user (POST /scans)
 app.post("/scans", async (req, res) => {
   try {
-    const scan = await Scan.create(req.body);
-    res.status(201).json(scan);
+    console.log("📥 Received scan request:", req.body);
+    const { userId, barcode, name, brand, co2e, carbonRating, source } = req.body;
+
+    if (!userId || !barcode || !name) {
+      console.error("❌ Missing required fields:", { userId, barcode, name });
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Create the scan
+    console.log("💾 Creating scan for user:", userId);
+    const scan = await Scan.create({
+      userId,
+      barcode,
+      name,
+      brand,
+      co2e,
+      carbonRating,
+      source,
+    });
+    console.log("✅ Scan created:", scan._id);
+
+    // Update user's scan count and points
+    const pointsEarned = 10; // 10 points per scan
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { scanCount: 1, points: pointsEarned } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      console.error("❌ User not found:", userId);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log("✅ User updated - Points:", updatedUser.points, "Scans:", updatedUser.scanCount);
+    res.status(201).json({ scan, pointsEarned });
   } catch (err) {
+    console.error("❌ Error saving scan:", err);
     res.status(400).json({ error: err.message });
   }
 });
 
-// List scans (GET /scans)
+// Get user's scan history (GET /scans/user/:userId)
+app.get("/scans/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const scans = await Scan.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(100);
+    res.json(scans);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get user profile with stats (GET /users/:userId)
+app.get("/users/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List all scans (GET /scans) - for admin purposes
 app.get("/scans", async (req, res) => {
   try {
     const scans = await Scan.find().sort({ createdAt: -1 }).limit(50);
