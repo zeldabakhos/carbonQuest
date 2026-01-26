@@ -19,11 +19,12 @@ import {
   getComparisonText,
 } from "@/app/utils/carbonFootprint";
 import { useAuth } from "./context/AuthContext";
+import { scanAPI } from "./lib/api";
 
 export default function ProductScreen() {
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
   const router = useRouter();
-  const { isSignedIn, loading: authLoading } = useAuth();
+  const { isSignedIn, loading: authLoading, user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
@@ -63,15 +64,55 @@ export default function ProductScreen() {
       return;
     }
 
-    lookupProduct(String(barcode)).then((result) => {
+    lookupProduct(String(barcode)).then(async (result) => {
       if (result.success && result.product) {
         setProduct(result.product);
+
+        // Save scan to backend if user is signed in
+        if (user?.id) {
+          try {
+            const carbonEstimate = calculateCarbonFootprint(result.product);
+            const isBeautyProduct = result.product.source === "openbeautyfacts";
+            const carbonRating = getCarbonRating(carbonEstimate, isBeautyProduct);
+
+            console.log("💾 Saving scan for user:", user.id);
+            console.log("📊 Scan data:", {
+              barcode: result.product.barcode,
+              name: result.product.name,
+              carbonRating: carbonRating.rating,
+            });
+
+            const response = await scanAPI.saveScan(user.id, {
+              barcode: result.product.barcode,
+              name: result.product.name,
+              brand: result.product.brand,
+              co2e: carbonEstimate.value,
+              carbonRating: carbonRating.rating,
+              source: result.product.source,
+            });
+            console.log("✅ Scan saved successfully!");
+            console.log("🎯 Points earned:", response.pointsEarned);
+            console.log("🌳 Garden updated - Total plants:", response.garden?.totalPlants);
+          } catch (error: any) {
+            console.error("❌ Failed to save scan");
+            if (error.response) {
+              console.error("   Status:", error.response.status);
+              console.error("   Data:", error.response.data);
+            } else if (error.message) {
+              console.error("   Error:", error.message);
+            } else {
+              console.error("   Unknown error:", error);
+            }
+          }
+        } else {
+          console.log("⚠️ No user ID - scan not saved");
+        }
       } else {
         setError(result.error || "Product not found");
       }
       setLoading(false);
     });
-  }, [barcode]);
+  }, [barcode, user]);
 
   if (loading) {
     return (

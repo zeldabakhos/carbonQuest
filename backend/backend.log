@@ -85,3 +85,248 @@
 🌱 Growth points for rating A : 20
 ✅ User updated - Points: 150 Scans: 15
 🌳 Garden updated - Plants: 5 Level: 1
+Signup error: MongoServerSelectionError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/sdam/topology.js:346:38)
+    at async tryOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:150:18)
+    at async executeOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:80:16)
+    at async FindCursor._initialize (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/find_cursor.js:62:26)
+    at async FindCursor.cursorInit (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:654:13)
+    at async FindCursor.next (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:326:17)
+    at async Collection.findOne (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/collection.js:313:24)
+    at async model.Query._findOne (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:2719:15)
+    at async model.Query.exec (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:4652:63) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-6dlrzjf-shard-00-00.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-01.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-02.vpcjjzi.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-2pehlo-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000166'),
+    maxSetVersion: 273,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cmap/connect.js:286:44)
+      at Object.onceWrapper (node:events:622:26)
+      at TLSSocket.emit (node:events:507:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(1) { 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Signup error: MongoServerSelectionError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/sdam/topology.js:346:38)
+    at async tryOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:150:18)
+    at async executeOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:80:16)
+    at async FindCursor._initialize (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/find_cursor.js:62:26)
+    at async FindCursor.cursorInit (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:654:13)
+    at async FindCursor.next (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:326:17)
+    at async Collection.findOne (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/collection.js:313:24)
+    at async model.Query._findOne (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:2719:15)
+    at async model.Query.exec (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:4652:63) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-6dlrzjf-shard-00-00.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-01.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-02.vpcjjzi.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-2pehlo-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000166'),
+    maxSetVersion: 273,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cmap/connect.js:286:44)
+      at Object.onceWrapper (node:events:622:26)
+      at TLSSocket.emit (node:events:507:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(1) { 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Signup error: MongoServerSelectionError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/sdam/topology.js:346:38)
+    at async tryOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:150:18)
+    at async executeOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:80:16)
+    at async FindCursor._initialize (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/find_cursor.js:62:26)
+    at async FindCursor.cursorInit (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:654:13)
+    at async FindCursor.next (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:326:17)
+    at async Collection.findOne (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/collection.js:313:24)
+    at async model.Query._findOne (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:2719:15)
+    at async model.Query.exec (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:4652:63) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-6dlrzjf-shard-00-00.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-01.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-02.vpcjjzi.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-2pehlo-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000166'),
+    maxSetVersion: 273,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cmap/connect.js:286:44)
+      at Object.onceWrapper (node:events:622:26)
+      at TLSSocket.emit (node:events:507:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(1) { 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Signup error: MongoServerSelectionError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/sdam/topology.js:346:38)
+    at async tryOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:150:18)
+    at async executeOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:80:16)
+    at async FindCursor._initialize (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/find_cursor.js:62:26)
+    at async FindCursor.cursorInit (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:654:13)
+    at async FindCursor.next (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:326:17)
+    at async Collection.findOne (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/collection.js:313:24)
+    at async model.Query._findOne (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:2719:15)
+    at async model.Query.exec (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:4652:63) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-6dlrzjf-shard-00-00.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-01.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-02.vpcjjzi.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-2pehlo-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000166'),
+    maxSetVersion: 273,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cmap/connect.js:286:44)
+      at Object.onceWrapper (node:events:622:26)
+      at TLSSocket.emit (node:events:507:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(1) { 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}
+Signup error: MongoServerSelectionError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+
+    at Topology.selectServer (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/sdam/topology.js:346:38)
+    at async tryOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:150:18)
+    at async executeOperation (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/operations/execute_operation.js:80:16)
+    at async FindCursor._initialize (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/find_cursor.js:62:26)
+    at async FindCursor.cursorInit (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:620:27)
+    at async FindCursor.fetchBatch (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:654:13)
+    at async FindCursor.next (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cursor/abstract_cursor.js:326:17)
+    at async Collection.findOne (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/collection.js:313:24)
+    at async model.Query._findOne (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:2719:15)
+    at async model.Query.exec (/Users/assile/carbonQuest/backend/node_modules/mongoose/lib/query.js:4652:63) {
+  errorLabelSet: Set(0) {},
+  reason: TopologyDescription {
+    type: 'ReplicaSetNoPrimary',
+    servers: Map(3) {
+      'ac-6dlrzjf-shard-00-00.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-01.vpcjjzi.mongodb.net:27017' => [ServerDescription],
+      'ac-6dlrzjf-shard-00-02.vpcjjzi.mongodb.net:27017' => [ServerDescription]
+    },
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: 'atlas-2pehlo-shard-0',
+    maxElectionId: new ObjectId('7fffffff0000000000000166'),
+    maxSetVersion: 273,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: null
+  },
+  code: undefined,
+  [cause]: MongoNetworkError: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+  
+      at TLSSocket.<anonymous> (/Users/assile/carbonQuest/backend/node_modules/mongodb/lib/cmap/connect.js:286:44)
+      at Object.onceWrapper (node:events:622:26)
+      at TLSSocket.emit (node:events:507:28)
+      at emitErrorNT (node:internal/streams/destroy:170:8)
+      at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errorLabelSet: Set(1) { 'ResetPool' },
+    beforeHandshake: false,
+    [cause]: [Error: 80A0A8F601000000:error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error:ssl/record/rec_layer_s3.c:916:SSL alert number 80
+    ] {
+      library: 'SSL routines',
+      reason: 'tlsv1 alert internal error',
+      code: 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR'
+    }
+  }
+}

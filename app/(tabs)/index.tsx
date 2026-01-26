@@ -16,7 +16,7 @@ export default function TabsHomeScreen() {
 
   // If user is signed in and accessing the tabs home, redirect to scan
   if (isSignedIn) {
-    return <Redirect href="/scan" />;
+    return <Redirect href="/(tabs)/scan" />;
   }
 
   // If not signed in, redirect to the main landing page
