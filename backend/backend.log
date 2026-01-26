@@ -1,0 +1,87 @@
+[dotenv@17.2.3] injecting env (2) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+🚀 API running on http://localhost:3000
+✅ MongoDB connected
+📥 Received scan request: {
+  userId: '69777e793c00166d8bcfbe74',
+  barcode: '123456789',
+  name: 'Test Product',
+  brand: 'Test Brand',
+  co2e: 1.5,
+  carbonRating: 'B',
+  source: 'openfoodfacts'
+}
+💾 Creating scan for user: 69777e793c00166d8bcfbe74
+✅ Scan created: new ObjectId('69777e793c00166d8bcfbe76')
+🌱 Growth points for rating B : 15
+✅ User updated - Points: 10 Scans: 1
+🌳 Garden updated - Plants: 1 Level: 0
+📥 Received scan request: {
+  userId: '697779d0e78b4fac5872b456',
+  barcode: '3068320120256',
+  name: 'Eau minérale naturelle',
+  brand: 'Evian',
+  co2e: 0.608,
+  carbonRating: 'A',
+  source: 'openfoodfacts'
+}
+💾 Creating scan for user: 697779d0e78b4fac5872b456
+✅ Scan created: new ObjectId('69777eab3c00166d8bcfbe82')
+🌱 Growth points for rating A : 20
+✅ User updated - Points: 110 Scans: 11
+🌳 Garden updated - Plants: 1 Level: 0
+📥 Received scan request: {
+  userId: '697779d0e78b4fac5872b456',
+  barcode: '3068320120256',
+  name: 'Eau minérale naturelle',
+  brand: 'Evian',
+  co2e: 0.608,
+  carbonRating: 'A',
+  source: 'openfoodfacts'
+}
+💾 Creating scan for user: 697779d0e78b4fac5872b456
+✅ Scan created: new ObjectId('69777eb63c00166d8bcfbe8b')
+🌱 Growth points for rating A : 20
+✅ User updated - Points: 120 Scans: 12
+🌳 Garden updated - Plants: 2 Level: 0
+📥 Received scan request: {
+  userId: '697779d0e78b4fac5872b456',
+  barcode: '3068320120256',
+  name: 'Eau minérale naturelle',
+  brand: 'Evian',
+  co2e: 0.608,
+  carbonRating: 'A',
+  source: 'openfoodfacts'
+}
+💾 Creating scan for user: 697779d0e78b4fac5872b456
+✅ Scan created: new ObjectId('69777ec43c00166d8bcfbe94')
+🌱 Growth points for rating A : 20
+✅ User updated - Points: 130 Scans: 13
+🌳 Garden updated - Plants: 3 Level: 1
+📥 Received scan request: {
+  userId: '697779d0e78b4fac5872b456',
+  barcode: '3068320120256',
+  name: 'Eau minérale naturelle',
+  brand: 'Evian',
+  co2e: 0.608,
+  carbonRating: 'A',
+  source: 'openfoodfacts'
+}
+💾 Creating scan for user: 697779d0e78b4fac5872b456
+✅ Scan created: new ObjectId('69777ecb3c00166d8bcfbe9f')
+🌱 Growth points for rating A : 20
+✅ User updated - Points: 140 Scans: 14
+🌳 Garden updated - Plants: 4 Level: 1
+📥 Received scan request: {
+  userId: '697779d0e78b4fac5872b456',
+  barcode: '3068320120256',
+  name: 'Eau minérale naturelle',
+  brand: 'Evian',
+  co2e: 0.608,
+  carbonRating: 'A',
+  source: 'openfoodfacts'
+}
+💾 Creating scan for user: 697779d0e78b4fac5872b456
+✅ Scan created: new ObjectId('69777ed33c00166d8bcfbeac')
+🌱 Growth points for rating A : 20
+✅ User updated - Points: 150 Scans: 15
+🌳 Garden updated - Plants: 5 Level: 1

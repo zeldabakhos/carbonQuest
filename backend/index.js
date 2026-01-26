@@ -36,6 +36,19 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     scanCount: { type: Number, default: 0 },
     points: { type: Number, default: 0 },
+    // Impact Garden state
+    garden: {
+      plants: [
+        {
+          id: String,
+          stage: { type: Number, default: 0 }, // 0=seed, 1=sprout, 2=sapling, 3=young, 4=mature, 5=ancient
+          growthPoints: { type: Number, default: 0 },
+          plantedAt: { type: Date, default: Date.now },
+        },
+      ],
+      animals: [String], // Array of unlocked animal emojis
+      gardenLevel: { type: Number, default: 0 }, // 0=empty, 1=seedlings, 2=garden, 3=forest, 4=ecosystem
+    },
   },
   { timestamps: true }
 );
@@ -141,6 +154,55 @@ app.post("/auth/signin", async (req, res) => {
   }
 });
 
+// Helper: Calculate growth points based on carbon rating
+function getGrowthPoints(carbonRating) {
+  const growthMap = {
+    A: 20,
+    B: 15,
+    C: 10,
+    D: 7,
+    E: 5,
+    F: 3,
+  };
+  return growthMap[carbonRating?.toUpperCase()] || 10;
+}
+
+// Helper: Calculate plant stage based on growth points
+function getPlantStage(growthPoints) {
+  if (growthPoints >= 400) return 5; // Ancient Tree
+  if (growthPoints >= 200) return 4; // Mature Tree
+  if (growthPoints >= 100) return 3; // Young Tree
+  if (growthPoints >= 50) return 2; // Sapling
+  if (growthPoints >= 20) return 1; // Sprout
+  return 0; // Seed
+}
+
+// Helper: Get unlockable animals based on total plants
+function getUnlockedAnimals(plantCount) {
+  const animals = [];
+  if (plantCount >= 5) animals.push("🦋");
+  if (plantCount >= 10) animals.push("🐦");
+  if (plantCount >= 20) animals.push("🐰");
+  if (plantCount >= 30) animals.push("🐿️");
+  if (plantCount >= 50) animals.push("🦌");
+  if (plantCount >= 75) animals.push("🦊");
+  if (plantCount >= 100) animals.push("🐻");
+  return animals;
+}
+
+// Helper: Calculate garden level based on plants
+function getGardenLevel(plants) {
+  const matureTrees = plants.filter((p) => p.stage >= 4).length;
+  const youngTrees = plants.filter((p) => p.stage >= 3).length;
+  const saplings = plants.filter((p) => p.stage >= 2).length;
+
+  if (matureTrees >= 20) return 4; // Ecosystem
+  if (youngTrees >= 15) return 3; // Forest
+  if (saplings >= 10) return 2; // Garden
+  if (plants.length >= 3) return 1; // Seedlings
+  return 0; // Empty
+}
+
 // Create a scan for a user (POST /scans)
 app.post("/scans", async (req, res) => {
   try {
@@ -165,21 +227,68 @@ app.post("/scans", async (req, res) => {
     });
     console.log("✅ Scan created:", scan._id);
 
-    // Update user's scan count and points
-    const pointsEarned = 10; // 10 points per scan
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $inc: { scanCount: 1, points: pointsEarned } },
-      { new: true }
-    );
-
-    if (!updatedUser) {
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
       console.error("❌ User not found:", userId);
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log("✅ User updated - Points:", updatedUser.points, "Scans:", updatedUser.scanCount);
-    res.status(201).json({ scan, pointsEarned });
+    // Initialize garden if needed
+    if (!user.garden) {
+      user.garden = { plants: [], animals: [], gardenLevel: 0 };
+    }
+
+    // Calculate growth points based on carbon rating
+    const growthPoints = getGrowthPoints(carbonRating);
+    console.log("🌱 Growth points for rating", carbonRating, ":", growthPoints);
+
+    // Plant a new seed
+    const newPlant = {
+      id: scan._id.toString(),
+      stage: 0,
+      growthPoints: growthPoints,
+      plantedAt: new Date(),
+    };
+    newPlant.stage = getPlantStage(newPlant.growthPoints);
+    user.garden.plants.push(newPlant);
+
+    // Update existing plants with partial growth (older plants benefit too)
+    const partialGrowth = Math.floor(growthPoints / 2);
+    user.garden.plants.forEach((plant) => {
+      if (plant.id !== newPlant.id) {
+        plant.growthPoints += partialGrowth;
+        plant.stage = getPlantStage(plant.growthPoints);
+      }
+    });
+
+    // Update animals based on plant count
+    const newAnimals = getUnlockedAnimals(user.garden.plants.length);
+    user.garden.animals = newAnimals;
+
+    // Update garden level
+    user.garden.gardenLevel = getGardenLevel(user.garden.plants);
+
+    // Update user's scan count and points
+    const pointsEarned = 10;
+    user.scanCount += 1;
+    user.points += pointsEarned;
+
+    await user.save();
+
+    console.log("✅ User updated - Points:", user.points, "Scans:", user.scanCount);
+    console.log("🌳 Garden updated - Plants:", user.garden.plants.length, "Level:", user.garden.gardenLevel);
+
+    res.status(201).json({
+      scan,
+      pointsEarned,
+      garden: {
+        newPlant,
+        totalPlants: user.garden.plants.length,
+        newAnimals: newAnimals.filter((a) => !user.garden.animals.includes(a)),
+        gardenLevel: user.garden.gardenLevel,
+      },
+    });
   } catch (err) {
     console.error("❌ Error saving scan:", err);
     res.status(400).json({ error: err.message });
