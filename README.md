@@ -2,208 +2,182 @@
 
 A React Native/Expo mobile application that scans product barcodes and displays comprehensive product information including carbon footprint estimates.
 
-## Architecture
-
-This project consists of two main components:
-- **Mobile App**: React Native/Expo app (runs locally or on web)
-- **Backend Server**: Node.js/Express API with MongoDB (runs in Docker)
-
-## Prerequisites
-
-- Node.js (v18 or higher)
-- Docker and Docker Compose
-- Expo CLI: `npm install -g expo-cli`
-- For mobile testing: Expo Go app on your phone
-
-## Quick Start
-
-### 1. Start the Backend Services (Docker)
-
-The backend server and MongoDB run in Docker containers:
-
-```bash
-# Start server and MongoDB
-docker-compose up -d
-
-# Check if services are running
-docker-compose ps
-
-# View logs
-docker-compose logs -f server
-```
-
-This will start:
-- **Server**: http://localhost:4000
-- **MongoDB**: localhost:27017
-
-### 2. Run the Mobile App
-
-The Expo app runs locally (not in Docker):
-
-```bash
-# Install dependencies
-npm install
-
-# Start Expo
-npm start
-
-# Or run directly on specific platform:
-npm run ios       # iOS simulator
-npm run android   # Android emulator
-npm run web       # Web browser
-```
-
-## Environment Configuration
-
-### Backend (.env)
-Create or update `/server/.env`:
-
-```env
-NODE_ENV=development
-MONGO_URI=mongodb://mongodb:27017/carbonquest
-SECRET_TOKEN_KEY=your-secret-key-here
-PORT=4000
-```
-
-### Mobile App
-The app will connect to your backend at:
-- **Local development**: http://localhost:4000
-- **Expo Go on phone**: http://YOUR_LOCAL_IP:4000
-
-Update API endpoints in your app code if needed (typically in `app/src/utils/productApi.ts`).
-
-## Project Structure
-
-```
-carbonquest/
-├── app/                    # Expo Router app directory
-│   └── src/               # App screens and components
-│       ├── (tabs)/        # Tab navigation screens
-│       ├── utils/         # Utilities (API, carbon calculations)
-│       ├── scan.tsx       # Barcode scanning screen
-│       ├── product.tsx    # Product details screen
-│       └── _layout.tsx    # Root layout
-├── assets/                # Images and static assets
-├── components/            # Reusable React components
-├── constants/             # App constants and theme
-├── hooks/                 # Custom React hooks
-├── server/               # Backend API (runs in Docker)
-│   ├── controllers/      # Request handlers
-│   ├── models/          # MongoDB schemas
-│   ├── routes/          # API routes
-│   ├── middleware/      # Express middleware
-│   ├── utils/           # Database connection
-│   ├── Dockerfile       # Server Docker configuration
-│   └── index.js         # Server entry point
-├── docker-compose.yml    # Docker orchestration
-├── package.json         # Mobile app dependencies
-└── app.json            # Expo configuration
-```
-
-## API Endpoints
-
-The backend provides these endpoints:
-
-- `GET /` - Health check
-- `POST /api/users/signup` - User registration
-- `POST /api/users/signin` - User login
-- Additional routes defined in `/server/routes/`
-
-## Docker Commands
-
-```bash
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# Rebuild after changes
-docker-compose up -d --build
-
-# View logs
-docker-compose logs -f server
-
-# Access server container
-docker-compose exec server sh
-
-# Access MongoDB
-docker-compose exec mongodb mongosh
-
-# Remove all data (including database)
-docker-compose down -v
-```
-
-## Development Workflow
-
-1. **Backend Development**:
-   - Edit files in `/server`
-   - Server auto-restarts with nodemon
-   - Check logs: `docker-compose logs -f server`
-
-2. **Mobile App Development**:
-   - Edit files in `/app`, `/components`, etc.
-   - Expo hot-reloads automatically
-   - Scan QR code with Expo Go app to test on phone
-
-3. **Database**:
-   - Data persists in Docker volume `mongodb_data`
-   - Use MongoDB Compass: `mongodb://localhost:27017`
-
 ## Features
 
 - 📱 Barcode scanning with camera
 - 🔍 Product lookup via Open Food Facts & Open Beauty Facts APIs
 - 🌱 Carbon footprint estimation
 - 📊 Detailed product information
-- 💾 User authentication and profiles
+- 👤 User authentication with MongoDB Atlas
+- 💾 Secure user data storage
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- Expo CLI: `npm install -g expo-cli`
+- For mobile testing: Expo Go app on your phone
+
+## Quick Start
+
+### 1. Start the Backend Server
+
+```bash
+cd backend
+npm start
+```
+
+You should see:
+```
+✅ MongoDB connected
+🚀 API running on http://localhost:3000
+```
+
+### 2. Configure API URL
+
+**Important:** Update the API URL in `app/lib/api.ts` based on how you're testing:
+
+- **iOS Simulator**: `http://localhost:3000`
+- **Android Emulator**: `http://10.0.2.2:3000`
+- **Physical Device**: `http://YOUR_COMPUTER_IP:3000`
+
+Find your computer's IP:
+- **Mac/Linux**: `ifconfig | grep "inet " | grep -v 127.0.0.1`
+- **Windows**: `ipconfig` (IPv4 Address)
+
+### 3. Start the Expo App
+
+```bash
+# In the root directory
+npm install
+npm start
+```
+
+Then:
+- Scan QR code with Expo Go app
+- Or press `i` for iOS simulator
+- Or press `a` for Android emulator
+
+## Project Structure
+
+```
+carbonquest/
+├── app/                    # Expo Router app directory
+│   ├── (tabs)/            # Tab navigation screens
+│   ├── context/           # React contexts (Auth, etc.)
+│   ├── lib/               # API client
+│   ├── utils/             # Utilities (carbon calculations)
+│   ├── scan.tsx           # Barcode scanning screen
+│   ├── product.tsx        # Product details screen
+│   ├── signin.tsx         # Sign in screen
+│   ├── signup.tsx         # Sign up screen
+│   └── _layout.tsx        # Root layout
+├── backend/               # Node.js/Express backend
+│   ├── .env              # Environment variables (MongoDB URI)
+│   ├── index.js          # Server entry point
+│   └── package.json      # Backend dependencies
+├── assets/                # Images and static assets
+├── components/            # Reusable React components
+├── constants/             # App constants and theme
+├── hooks/                 # Custom React hooks
+├── package.json           # App dependencies
+└── app.json              # Expo configuration
+```
+
+## Authentication
+
+The app uses real authentication with MongoDB Atlas:
+
+1. **Sign Up**: Creates a new user in MongoDB with hashed password
+2. **Sign In**: Validates credentials against MongoDB
+3. **Persistence**: User data saved locally in AsyncStorage
+
+See [SETUP.md](SETUP.md) for detailed authentication setup.
+
+## Backend API
+
+### Auth Endpoints
+
+- `POST /auth/signup` - Register new user
+- `POST /auth/signin` - Sign in existing user
+
+### Scan Endpoints
+
+- `GET /scans` - Get all scans
+- `POST /scans` - Create a scan
+- `GET /scans/:id` - Get scan by ID
+- `DELETE /scans/:id` - Delete scan
+
+## How It Works
+
+### Barcode Scanning
+1. Camera scans barcode
+2. Looks up product in Open Food Facts / Open Beauty Facts
+3. Calculates carbon footprint estimate
+4. Displays results with carbon rating (A-F)
+
+### Carbon Footprint Calculation
+Estimates based on:
+- Product category and type
+- Ingredients and manufacturing
+- Packaging materials
+- Transportation estimates
+
+## Development
+
+### Running with Hot Reload
+
+**Backend:**
+```bash
+cd backend
+npm run dev  # Auto-restarts on file changes
+```
+
+**Frontend:**
+```bash
+npm start  # Expo hot reload enabled
+```
 
 ## Troubleshooting
 
-### Can't connect to backend from phone
-- Ensure your phone and computer are on the same network
-- Use your computer's local IP instead of `localhost`
-- Check if firewall is blocking port 4000
+### Cannot connect to backend
 
-### MongoDB connection errors
-```bash
-# Check if MongoDB container is running
-docker-compose ps
+1. Make sure backend is running (`cd backend && npm start`)
+2. Check API URL in `app/lib/api.ts`
+3. If using physical device, ensure same WiFi network
+4. Test backend: open `http://localhost:3000` in browser
 
-# Restart MongoDB
-docker-compose restart mongodb
-```
+### "Email already registered"
+
+User exists in database. Use sign in or different email.
+
+### "Invalid email or password"
+
+- Verify credentials are correct
+- Passwords are case-sensitive
+- Make sure you signed up first
+
+### Camera not working
+
+- Grant camera permissions when prompted
+- iOS Simulator camera won't work (use physical device)
 
 ### Expo app won't start
+
 ```bash
-# Clear cache and reinstall
 rm -rf node_modules package-lock.json
 npm install
 npm start -- --clear
 ```
 
-### Docker build issues
-```bash
-# Clean rebuild
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up -d
-```
-
-## Production Deployment
-
-For production:
-1. Update environment variables
-2. Use production MongoDB URI (not the Docker one)
-3. Build the mobile app: `expo build:android` or `expo build:ios`
-4. Deploy backend to a cloud service (AWS, DigitalOcean, etc.)
-
 ## Tech Stack
 
 - **Frontend**: React Native, Expo, TypeScript
 - **Backend**: Node.js, Express
-- **Database**: MongoDB
-- **Container**: Docker, Docker Compose
+- **Database**: MongoDB Atlas
+- **Authentication**: bcrypt for password hashing
+- **Navigation**: Expo Router
+- **Camera**: expo-camera
+- **Barcode Scanning**: @zxing/browser
 - **APIs**: Open Food Facts, Open Beauty Facts, Agribalyse
 
 ## License

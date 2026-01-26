@@ -23,7 +23,7 @@ import { useAuth } from "./context/AuthContext";
 export default function ProductScreen() {
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
   const router = useRouter();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
@@ -34,10 +34,10 @@ export default function ProductScreen() {
 
   // Redirect to signin if not authenticated
   useEffect(() => {
-    if (!isSignedIn) {
+    if (!authLoading && !isSignedIn) {
       router.replace("/signin");
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, authLoading]);
 
   const goToBarcode = (code: string) => {
     const cleaned = (code || "").replace(/\D/g, "");

@@ -15,7 +15,7 @@ import { useAuth } from "./context/AuthContext";
 
 export default function ScanScreen() {
   const router = useRouter();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, loading } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [barcode, setBarcode] = useState<{ data: string; type: string } | null>(null);
@@ -25,10 +25,10 @@ export default function ScanScreen() {
 
   // Redirect to signin if not authenticated
   useEffect(() => {
-    if (!isSignedIn) {
+    if (!loading && !isSignedIn) {
       router.replace("/signin");
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, loading]);
 
   // Animate scan line
   useEffect(() => {
