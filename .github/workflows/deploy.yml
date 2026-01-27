@@ -38,7 +38,7 @@ jobs:
             git pull origin main
             npm install --production
             pm2 restart carbonquest-backend
-        if: secrets.PRODUCTION_HOST != ''
+        continue-on-error: true
 
   build-and-submit:
     name: Build & Submit to App Stores

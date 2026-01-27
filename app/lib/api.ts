@@ -1,11 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
+import dotenv from "dotenv";
 
+// Use environment variable or fallback to default
 const TOKEN_KEY = 'auth_token';
 
+const PHYSICAL_DEVICE_IP = '10.68.245.57';
+
 // IMPORTANT: For physical devices, set your computer's local IP here
-const PHYSICAL_DEVICE_IP = '172.20.10.2';
 
 // Auto-detect the correct API URL based on platform
 const getApiUrl = () => {

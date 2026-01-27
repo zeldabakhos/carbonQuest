@@ -29,7 +29,6 @@ jobs:
           fi
           echo "✅ Production API is healthy"
         continue-on-error: true
-        if: secrets.PRODUCTION_API_URL != ''
 
       - name: 🔍 Check Staging API
         run: |
@@ -40,7 +39,6 @@ jobs:
           fi
           echo "✅ Staging API is healthy"
         continue-on-error: true
-        if: secrets.STAGING_API_URL != ''
 
       - name: 📧 Send notification on failure
         if: failure()
@@ -82,4 +80,4 @@ jobs:
             find /var/backups/mongodb -type d -mtime +7 -exec rm -rf {} +
             
             echo "✅ Database backup completed"
-        if: secrets.PRODUCTION_HOST != ''
+        continue-on-error: true
