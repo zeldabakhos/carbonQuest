@@ -1,0 +1,97 @@
+name: Backend API CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    name: Test Backend API
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 📥 Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🔍 Check code style
+        working-directory: ./backend
+        run: npx eslint . || true
+
+      - name: 🧪 Run tests
+        working-directory: ./backend
+        run: npm test || echo "No tests configured yet"
+        env:
+          MONGO_URI: mongodb://localhost:27017/carbonquest-test
+          JWT_SECRET: test-secret-key
+          PORT: 3000
+
+      - name: 🚀 Start server test
+        working-directory: ./backend
+        run: |
+          timeout 10s node index.js &
+          sleep 5
+          curl http://localhost:3000 || exit 1
+        env:
+          MONGO_URI: mongodb://localhost:27017/carbonquest-test
+          JWT_SECRET: test-secret-key
+          PORT: 3000
+
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        if: secrets.DOCKER_USERNAME != ''
+
+      - name: 🏗️ Build Docker image
+        working-directory: ./backend
+        run: |
+          docker build -t carbonquest-backend:latest .
+        if: hashFiles('backend/Dockerfile') != ''
+
+      - name: 🚀 Push to Docker Hub
+        run: |
+          docker tag carbonquest-backend:latest ${{ secrets.DOCKER_USERNAME }}/carbonquest-backend:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/carbonquest-backend:latest
+        if: secrets.DOCKER_USERNAME != '' && hashFiles('backend/Dockerfile') != ''

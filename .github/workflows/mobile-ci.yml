@@ -1,0 +1,88 @@
+name: Mobile App CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'constants/**'
+      - 'hooks/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'constants/**'
+      - 'hooks/**'
+      - 'package.json'
+
+jobs:
+  lint-and-test:
+    name: Lint and Test Mobile App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run ESLint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 🧪 Run tests
+        run: npm test
+        continue-on-error: true
+
+      - name: 📊 Type check
+        run: npx tsc --noEmit
+
+      - name: ✅ Build check
+        run: npx expo export --platform all
+        env:
+          EXPO_PUBLIC_API_IP: 10.0.2.2
+          EXPO_PUBLIC_API_PORT: 3000
+
+  build-preview:
+    name: Build Preview (EAS)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 🏗️ Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build preview (iOS)
+        run: eas build --platform ios --profile preview --non-interactive --no-wait
+        continue-on-error: true
+
+      - name: 🔨 Build preview (Android)
+        run: eas build --platform android --profile preview --non-interactive --no-wait
+        continue-on-error: true

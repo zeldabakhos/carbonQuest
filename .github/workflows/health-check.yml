@@ -1,0 +1,85 @@
+name: Scheduled Health Check
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: API Health Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔍 Check Production API
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://api.carbonquest.com || echo "000")
+          if [ "$response" != "200" ]; then
+            echo "❌ Production API is down! Status: $response"
+            exit 1
+          fi
+          echo "✅ Production API is healthy"
+        continue-on-error: true
+        if: secrets.PRODUCTION_API_URL != ''
+
+      - name: 🔍 Check Staging API
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://staging.carbonquest.com || echo "000")
+          if [ "$response" != "200" ]; then
+            echo "❌ Staging API is down! Status: $response"
+            exit 1
+          fi
+          echo "✅ Staging API is healthy"
+        continue-on-error: true
+        if: secrets.STAGING_API_URL != ''
+
+      - name: 📧 Send notification on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: '🚨 CarbonQuest API Health Check Failed'
+          to: ${{ secrets.ALERT_EMAIL }}
+          from: GitHub Actions
+          body: 'API health check failed. Please investigate immediately.'
+        continue-on-error: true
+
+  database-backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    if: github.event.schedule != ''
+    
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 💾 Backup MongoDB
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            # Create backup directory
+            mkdir -p /var/backups/mongodb
+            
+            # Backup database
+            mongodump --db carbonquest --out /var/backups/mongodb/$(date +%Y%m%d_%H%M%S)
+            
+            # Keep only last 7 days of backups
+            find /var/backups/mongodb -type d -mtime +7 -exec rm -rf {} +
+            
+            echo "✅ Database backup completed"
+        if: secrets.PRODUCTION_HOST != ''
