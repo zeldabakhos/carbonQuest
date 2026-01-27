@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 const TOKEN_KEY = 'auth_token';
 
 // IMPORTANT: For physical devices, set your computer's local IP here
-const PHYSICAL_DEVICE_IP = 'localhost'; // Change to your IP like '192.168.1.100'
+const PHYSICAL_DEVICE_IP = '172.20.10.2';
 
 // Auto-detect the correct API URL based on platform
 const getApiUrl = () => {
@@ -18,13 +18,11 @@ const getApiUrl = () => {
     // Android Emulator needs special IP to access host machine
     console.log('📱 Android detected - Using 10.0.2.2:3000');
     return 'http://10.0.2.2:3000';
-  } else if (Platform.OS === 'ios') {
-    // iOS Simulator can use localhost
-    console.log('📱 iOS detected - Using localhost:3000');
-    return 'http://localhost:3000';
   }
 
-  // Fallback
+  // iOS (both simulator and physical device) - use local IP
+  // localhost only works on simulator, local IP works for both
+  console.log(`📱 iOS detected - Using ${PHYSICAL_DEVICE_IP}:3000`);
   return `http://${PHYSICAL_DEVICE_IP}:3000`;
 };
 
