@@ -3,8 +3,13 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
+
+// JWT Secret - in production, use a strong secret from environment
+const JWT_SECRET = process.env.JWT_SECRET || "carbonquest-jwt-secret-change-in-production";
+const JWT_EXPIRES_IN = "7d"; // Token expires in 7 days
 
 const app = express();
 
@@ -54,6 +59,33 @@ const userSchema = new mongoose.Schema(
 );
 
 const User = mongoose.model("User", userSchema);
+
+// --- JWT Authentication Middleware ---
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ error: "Invalid or expired token" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
+// Helper: Generate JWT token
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+};
 
 // --- Scan schema ---
 const scanSchema = new mongoose.Schema(
@@ -108,11 +140,17 @@ app.post("/auth/signup", async (req, res) => {
       password: hashedPassword,
     });
 
-    // Return user without password
+    // Generate JWT token
+    const token = generateToken(user);
+
+    // Return user with token
     res.status(201).json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (err) {
     console.error("Signup error:", err);
@@ -142,11 +180,17 @@ app.post("/auth/signin", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Return user without password
+    // Generate JWT token
+    const token = generateToken(user);
+
+    // Return user with token
     res.json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (err) {
     console.error("Signin error:", err);
@@ -203,8 +247,8 @@ function getGardenLevel(plants) {
   return 0; // Empty
 }
 
-// Create a scan for a user (POST /scans)
-app.post("/scans", async (req, res) => {
+// Create a scan for a user (POST /scans) - Protected route
+app.post("/scans", authenticateToken, async (req, res) => {
   try {
     console.log("📥 Received scan request:", req.body);
     const { userId, barcode, name, brand, co2e, carbonRating, source } = req.body;
@@ -295,8 +339,8 @@ app.post("/scans", async (req, res) => {
   }
 });
 
-// Get user's scan history (GET /scans/user/:userId)
-app.get("/scans/user/:userId", async (req, res) => {
+// Get user's scan history (GET /scans/user/:userId) - Protected route
+app.get("/scans/user/:userId", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const scans = await Scan.find({ userId })
@@ -308,8 +352,8 @@ app.get("/scans/user/:userId", async (req, res) => {
   }
 });
 
-// Get user profile with stats (GET /users/:userId)
-app.get("/users/:userId", async (req, res) => {
+// Get user profile with stats (GET /users/:userId) - Protected route
+app.get("/users/:userId", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const user = await User.findById(userId).select("-password");

@@ -113,17 +113,21 @@ export default function SignInScreen() {
                 >
                   <Text style={styles.inputIcon}>📧</Text>
                   <TextInput
-                    style={styles.input}
-                    placeholder="your@email.com"
-                    placeholderTextColor={colors.neutral.gray}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onFocus={() => setFocusedInput("email")}
-                    onBlur={() => setFocusedInput("")}
-                  />
+                  style={styles.input}
+                  placeholder="your@email.com"
+                  placeholderTextColor={colors.neutral.gray}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  importantForAutofill="yes"
+                  onFocus={() => setFocusedInput("email")}
+                  onBlur={() => setFocusedInput("")}
+                  editable
+                />
                 </View>
               </View>
 
@@ -138,15 +142,19 @@ export default function SignInScreen() {
                 >
                   <Text style={styles.inputIcon}>🔒</Text>
                   <TextInput
-                    style={styles.input}
-                    placeholder="Enter your password"
-                    placeholderTextColor={colors.neutral.gray}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    onFocus={() => setFocusedInput("password")}
-                    onBlur={() => setFocusedInput("")}
-                  />
+                  style={styles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor={colors.neutral.gray}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoComplete="password"
+                  textContentType="password"
+                  importantForAutofill="yes"
+                  onFocus={() => setFocusedInput("password")}
+                  onBlur={() => setFocusedInput("")}
+                  editable
+                />
                 </View>
               </View>
 
@@ -302,7 +310,6 @@ const styles = StyleSheet.create({
   inputContainerFocused: {
     borderColor: colors.primary.blue,
     backgroundColor: colors.neutral.white,
-    ...shadows.colored.blue,
   },
   inputIcon: {
     fontSize: 20,

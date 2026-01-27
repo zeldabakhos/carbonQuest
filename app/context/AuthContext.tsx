@@ -49,8 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
-      await authAPI.signUp(name, email, password);
-      console.log('✅ Sign up successful - please sign in');
+      const userData = await authAPI.signUp(name, email, password);
+      await authAPI.saveUserData(userData);
+      setUser(userData);
+      console.log('✅ Sign up successful:', userData.name);
       return true;
     } catch (error: any) {
       console.error('❌ Sign up error:', error.response?.data?.error || error.message);

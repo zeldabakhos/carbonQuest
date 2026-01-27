@@ -44,11 +44,18 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#22c55e"
+        }
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }

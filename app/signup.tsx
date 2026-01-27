@@ -366,7 +366,6 @@ const styles = StyleSheet.create({
   inputContainerFocused: {
     borderColor: colors.primary.blue,
     backgroundColor: colors.neutral.white,
-    ...shadows.colored.blue,
   },
   inputIcon: {
     fontSize: 20,

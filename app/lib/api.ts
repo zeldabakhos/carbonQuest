@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
 
+const TOKEN_KEY = 'auth_token';
+
 // IMPORTANT: For physical devices, set your computer's local IP here
 const PHYSICAL_DEVICE_IP = 'localhost'; // Change to your IP like '192.168.1.100'
 
@@ -38,6 +40,18 @@ const api = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
+// Add request interceptor to attach token
+api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Add response interceptor for better error logging
 api.interceptors.response.use(
   (response) => response,
@@ -52,6 +66,8 @@ api.interceptors.response.use(
       } else if (Platform.OS === 'ios') {
         console.error('   iOS: Backend should be at http://localhost:3000');
       }
+    } else if (error.response?.status === 401 || error.response?.status === 403) {
+      console.error('❌ Authentication error - token may be invalid or expired');
     }
     return Promise.reject(error);
   }
@@ -76,9 +92,12 @@ export interface User {
 }
 
 export interface AuthResponse {
-  id: string;
-  name: string;
-  email: string;
+  token: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface ScanData {
@@ -108,7 +127,33 @@ export const authAPI = {
       email,
       password,
     });
-    return response.data;
+
+    console.log('📦 Full response:', JSON.stringify(response.data, null, 2));
+
+    if (!response.data) {
+      console.error('❌ No response.data');
+      throw new Error('No response data from server');
+    }
+
+    if (!response.data.user) {
+      console.error('❌ No response.data.user');
+      throw new Error('No user data in response');
+    }
+
+    if (!response.data.user.id) {
+      console.error('❌ No response.data.user.id');
+      throw new Error('No user id in response');
+    }
+
+    // Save token
+    await AsyncStorage.setItem(TOKEN_KEY, response.data.token);
+
+    // Return user with id field
+    return {
+      id: response.data.user.id,
+      name: response.data.user.name,
+      email: response.data.user.email,
+    };
   },
 
   async signIn(email: string, password: string): Promise<User> {
@@ -116,7 +161,14 @@ export const authAPI = {
       email,
       password,
     });
-    return response.data;
+    // Save token
+    await AsyncStorage.setItem(TOKEN_KEY, response.data.token);
+    // Return user with id field
+    return {
+      id: response.data.user.id,
+      name: response.data.user.name,
+      email: response.data.user.email,
+    };
   },
 
   async saveUserData(user: User): Promise<void> {
@@ -125,7 +177,8 @@ export const authAPI = {
 
   async loadUserData(): Promise<User | null> {
     const userStr = await AsyncStorage.getItem('user');
-    if (userStr) {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    if (userStr && token) {
       return JSON.parse(userStr);
     }
     return null;
@@ -133,6 +186,11 @@ export const authAPI = {
 
   async clearUserData(): Promise<void> {
     await AsyncStorage.removeItem('user');
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  },
+
+  async getToken(): Promise<string | null> {
+    return AsyncStorage.getItem(TOKEN_KEY);
   },
 };
 

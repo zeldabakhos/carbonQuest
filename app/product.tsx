@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { getUserCountryCode } from "./lib/userCountry";
+
 import {
   View,
   Text,
@@ -8,6 +10,8 @@ import {
   ActivityIndicator,
   Pressable,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { lookupProduct, Product } from "@/app/utils/productApi";
@@ -20,25 +24,39 @@ import {
 } from "@/app/utils/carbonFootprint";
 import { useAuth } from "./context/AuthContext";
 import { scanAPI } from "./lib/api";
+import { NotificationTypes } from "./lib/notifications";
 
 export default function ProductScreen() {
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
   const router = useRouter();
   const { isSignedIn, loading: authLoading, user } = useAuth();
 
+  // ✅ Level 2 location (no GPS): device/browser country code, with fallback parsing
+  const userCountryCode = useMemo(() => {
+    const code = getUserCountryCode();
+    console.log("📍 userCountryCode:", code);
+    return code;
+  }, []);
+
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ NEW: manual entry fallback
+  // ✅ manual entry fallback
   const [manualCode, setManualCode] = useState("");
+
+  // ✅ Always go to scan screen (but preserve back stack when possible)
+  const handleGoBackToScan = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/scan");
+  };
 
   // Redirect to signin if not authenticated
   useEffect(() => {
     if (!authLoading && !isSignedIn) {
       router.replace("/signin");
     }
-  }, [isSignedIn, authLoading]);
+  }, [isSignedIn, authLoading, router]);
 
   const goToBarcode = (code: string) => {
     const cleaned = (code || "").replace(/\D/g, "");
@@ -47,7 +65,8 @@ export default function ProductScreen() {
       return;
     }
 
-    router.replace({
+    // ✅ use push so back works (scan -> product -> back)
+    router.push({
       pathname: "/product",
       params: { barcode: cleaned },
     });
@@ -71,7 +90,11 @@ export default function ProductScreen() {
         // Save scan to backend if user is signed in
         if (user?.id) {
           try {
-            const carbonEstimate = calculateCarbonFootprint(result.product);
+            // ✅ pass userCountryCode into formula
+            const carbonEstimate = calculateCarbonFootprint(result.product, {
+              userCountryCode,
+            });
+
             const isBeautyProduct = result.product.source === "openbeautyfacts";
             const carbonRating = getCarbonRating(carbonEstimate, isBeautyProduct);
 
@@ -90,9 +113,27 @@ export default function ProductScreen() {
               carbonRating: carbonRating.rating,
               source: result.product.source,
             });
+
             console.log("✅ Scan saved successfully!");
             console.log("🎯 Points earned:", response.pointsEarned);
-            console.log("🌳 Garden updated - Total plants:", response.garden?.totalPlants);
+            console.log(
+              "🌳 Garden updated - Total plants:",
+              response.garden?.totalPlants
+            );
+
+            // Show notification for scan completion
+            NotificationTypes.scanComplete(
+              result.product.name,
+              carbonRating.rating,
+              response.pointsEarned
+            );
+
+            // Check for new animals unlocked
+            if (response.garden?.newAnimals?.length > 0) {
+              response.garden.newAnimals.forEach((animal: string) => {
+                NotificationTypes.animalUnlocked(animal);
+              });
+            }
           } catch (error: any) {
             console.error("❌ Failed to save scan");
             if (error.response) {
@@ -112,7 +153,7 @@ export default function ProductScreen() {
       }
       setLoading(false);
     });
-  }, [barcode, user]);
+  }, [barcode, user?.id, userCountryCode]);
 
   if (loading) {
     return (
@@ -123,51 +164,67 @@ export default function ProductScreen() {
     );
   }
 
-  // ✅ UPDATED: error screen now includes manual barcode search
+  // ✅ error screen includes manual barcode search
   if (error || !product) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorIcon}>😕</Text>
-        <Text style={styles.errorTitle}>Product Not Found</Text>
-        <Text style={styles.errorText}>{error}</Text>
-
-        <Text style={styles.barcodeText}>
-          Barcode: {barcode ? String(barcode) : "—"}
-        </Text>
-
-        <View style={{ width: "100%", marginTop: 12 }}>
-          <Text style={styles.manualLabel}>Enter barcode manually</Text>
-          <TextInput
-            value={manualCode}
-            onChangeText={setManualCode}
-            placeholder="e.g. 5449000000996"
-            keyboardType="numeric"
-            inputMode="numeric"
-            autoCorrect={false}
-            style={styles.input}
-          />
-
-          <Pressable
-            style={[styles.button, !manualCode.trim() && styles.buttonDisabled]}
-            onPress={() => goToBarcode(manualCode)}
-            disabled={!manualCode.trim()}
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView
+            contentContainerStyle={styles.center}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.buttonText}>Search</Text>
-          </Pressable>
+            <Text style={styles.errorIcon}>😕</Text>
+            <Text style={styles.errorTitle}>Product Not Found</Text>
+            <Text style={styles.errorText}>{error}</Text>
 
-          <Pressable
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.buttonTextSecondary}>Go back to Scan</Text>
-          </Pressable>
-        </View>
+            <Text style={styles.barcodeText}>
+              Barcode: {barcode ? String(barcode) : "—"}
+            </Text>
+
+            <View style={{ width: "100%", marginTop: 12 }}>
+              <Text style={styles.manualLabel}>Enter barcode manually</Text>
+              <TextInput
+                value={manualCode}
+                onChangeText={setManualCode}
+                placeholder="e.g. 5449000000996"
+                keyboardType="email-address"
+                autoCorrect={false}
+                autoCapitalize="none"
+                editable={true}
+                onSubmitEditing={() => manualCode.trim() && goToBarcode(manualCode)}
+                style={styles.input}
+              />
+
+              <Pressable
+                style={[
+                  styles.button,
+                  !manualCode.trim() && styles.buttonDisabled,
+                ]}
+                onPress={() => goToBarcode(manualCode)}
+                disabled={!manualCode.trim()}
+              >
+                <Text style={styles.buttonText}>Search</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.button, styles.buttonSecondary]}
+                onPress={handleGoBackToScan}
+              >
+                <Text style={styles.buttonTextSecondary}>Go back to Scan</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     );
   }
 
-  // Calculate carbon footprint
-  const carbonEstimate = calculateCarbonFootprint(product);
+  // ✅ pass userCountryCode for display too
+  const carbonEstimate = calculateCarbonFootprint(product, { userCountryCode });
   const isBeautyProduct = product.source === "openbeautyfacts";
   const carbonRating = getCarbonRating(carbonEstimate, isBeautyProduct);
 
@@ -189,9 +246,7 @@ export default function ProductScreen() {
         <Text style={styles.brand}>{product.brand}</Text>
         <Text style={styles.name}>{product.name}</Text>
 
-        {product.quantity && (
-          <Text style={styles.quantity}>{product.quantity}</Text>
-        )}
+        {product.quantity && <Text style={styles.quantity}>{product.quantity}</Text>}
 
         {/* Source Badge */}
         <View style={styles.sourceBadge}>
@@ -229,33 +284,29 @@ export default function ProductScreen() {
         <View style={styles.carbonCard}>
           <Text style={styles.carbonTitle}>🌍 Carbon Footprint</Text>
           <View style={styles.carbonRow}>
-            <View
-              style={[
-                styles.carbonBadge,
-                { backgroundColor: carbonRating.color },
-              ]}
-            >
+            <View style={[styles.carbonBadge, { backgroundColor: carbonRating.color }]}>
               <Text style={styles.carbonBadgeText}>{carbonRating.rating}</Text>
             </View>
             <View style={styles.carbonInfo}>
-              <Text style={styles.carbonValue}>
-                {formatCarbonValue(carbonEstimate)}
-              </Text>
+              <Text style={styles.carbonValue}>{formatCarbonValue(carbonEstimate)}</Text>
               <Text style={styles.carbonLabel}>{carbonRating.label}</Text>
             </View>
           </View>
+
           <Text style={styles.carbonPerKg}>
-            {isBeautyProduct 
+            {isBeautyProduct
               ? `(${(carbonEstimate.productWeight * 1000).toFixed(0)}ml product)`
-              : `(${formatCarbonPerKg(carbonEstimate)} • ${carbonEstimate.productWeight.toFixed(2)} kg product)`
-            }
+              : `(${formatCarbonPerKg(carbonEstimate)} • ${carbonEstimate.productWeight.toFixed(
+                  2
+                )} kg product)`}
           </Text>
-          <Text style={styles.carbonComparison}>
-            {getComparisonText(carbonEstimate)}
-          </Text>
+
+          <Text style={styles.carbonComparison}>{getComparisonText(carbonEstimate)}</Text>
+
           <Text style={styles.carbonExplanation}>
             {carbonEstimate.explanation} • {carbonEstimate.confidence} confidence
           </Text>
+
           {carbonEstimate.breakdown && (
             <View style={styles.carbonBreakdown}>
               <Text style={styles.breakdownTitle}>Breakdown:</Text>
@@ -294,7 +345,7 @@ export default function ProductScreen() {
         </View>
 
         {/* Scan Another Button */}
-        <Pressable style={styles.button} onPress={() => router.back()}>
+        <Pressable style={styles.button} onPress={handleGoBackToScan}>
           <Text style={styles.buttonText}>Scan Another Product</Text>
         </Pressable>
       </View>
@@ -360,7 +411,7 @@ function novaColor(group: number): string {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   center: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -377,7 +428,6 @@ const styles = StyleSheet.create({
   },
   barcodeText: { fontSize: 14, color: "#999", marginBottom: 8 },
 
-  // ✅ Styles for manual entry
   manualLabel: {
     fontSize: 14,
     fontWeight: "600",
@@ -389,10 +439,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 18,
     fontFamily: "monospace",
+    minHeight: 50,
   },
 
   header: {
@@ -445,7 +496,6 @@ const styles = StyleSheet.create({
   },
   scoreValueText: { color: "#fff", fontSize: 18, fontWeight: "700" },
 
-  // ✅ Carbon footprint styles
   carbonCard: {
     backgroundColor: "#ecfdf5",
     padding: 16,
@@ -478,28 +528,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-  carbonInfo: {
-    flex: 1,
-  },
+  carbonInfo: { flex: 1 },
   carbonValue: {
     fontSize: 20,
     fontWeight: "700",
     color: "#047857",
   },
-  carbonLabel: {
-    fontSize: 14,
-    color: "#065f46",
-  },
-  carbonPerKg: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  carbonComparison: {
-    fontSize: 14,
-    color: "#047857",
-    marginTop: 4,
-  },
+  carbonLabel: { fontSize: 14, color: "#065f46" },
+  carbonPerKg: { fontSize: 12, color: "#6b7280", marginTop: 4 },
+  carbonComparison: { fontSize: 14, color: "#047857", marginTop: 4 },
   carbonExplanation: {
     fontSize: 12,
     color: "#6b7280",
@@ -518,11 +555,7 @@ const styles = StyleSheet.create({
     color: "#065f46",
     marginBottom: 4,
   },
-  breakdownItem: {
-    fontSize: 13,
-    color: "#047857",
-    marginTop: 2,
-  },
+  breakdownItem: { fontSize: 13, color: "#047857", marginTop: 2 },
 
   infoSection: { marginBottom: 16 },
   infoTitle: {
@@ -557,7 +590,6 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 
-  // ✅ Disabled + secondary button
   buttonDisabled: { backgroundColor: "#9ca3af" },
   buttonSecondary: {
     backgroundColor: "#fff",
